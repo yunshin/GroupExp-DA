@@ -1,0 +1,87 @@
+LICENSE
+README.md
+setup.py
+pcdet/__init__.py
+pcdet/config.py
+pcdet/version.py
+pcdet.egg-info/PKG-INFO
+pcdet.egg-info/SOURCES.txt
+pcdet.egg-info/dependency_links.txt
+pcdet.egg-info/requires.txt
+pcdet.egg-info/top_level.txt
+pcdet/datasets/__init__.py
+pcdet/datasets/dataset copy.py
+pcdet/datasets/dataset.py
+pcdet/models/__init__.py
+pcdet/models/backbones_2d/__init__.py
+pcdet/models/backbones_2d/base_bev_backbone.py
+pcdet/models/backbones_2d/map_to_bev/__init__.py
+pcdet/models/backbones_2d/map_to_bev/height_compression.py
+pcdet/models/backbones_2d/map_to_bev/pointpillar_scatter.py
+pcdet/models/backbones_3d/__init__.py
+pcdet/models/backbones_3d/spconv_backbone.py
+pcdet/models/backbones_3d/spconv_unet.py
+pcdet/models/backbones_3d/pfe/__init__.py
+pcdet/models/backbones_3d/pfe/voxel_set_abstraction.py
+pcdet/models/backbones_3d/vfe/__init__.py
+pcdet/models/backbones_3d/vfe/mean_vfe.py
+pcdet/models/backbones_3d/vfe/pillar_vfe.py
+pcdet/models/backbones_3d/vfe/vfe_template.py
+pcdet/models/dense_heads/__init__.py
+pcdet/models/dense_heads/anchor_head_multi.py
+pcdet/models/dense_heads/anchor_head_single.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_0_8rpn copy 2.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_0_8rpn copy.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_0_8rpn.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_0_8rpn_one.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_0_8rpn_one_ori.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_0rpn.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_1rpn.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_self2 copy.py
+pcdet/models/dense_heads/anchor_head_single_ours_exp_self2.py
+pcdet/models/dense_heads/anchor_head_template.py
+pcdet/models/dense_heads/anchor_head_template_ours copy.py
+pcdet/models/dense_heads/anchor_head_template_ours.py
+pcdet/models/dense_heads/point_head_simple.py
+pcdet/models/dense_heads/point_head_template.py
+pcdet/models/dense_heads/point_intra_part_head.py
+pcdet/models/detectors/PartA2_net.py
+pcdet/models/detectors/__init__.py
+pcdet/models/detectors/detector3d_template copy.py
+pcdet/models/detectors/detector3d_template.py
+pcdet/models/detectors/pointpillar.py
+pcdet/models/detectors/pv_rcnn.py
+pcdet/models/detectors/second_net.py
+pcdet/models/detectors/second_net_iou.py
+pcdet/models/roi_heads/__init__.py
+pcdet/models/roi_heads/partA2_head.py
+pcdet/models/roi_heads/pvrcnn_head.py
+pcdet/models/roi_heads/roi_head_template.py
+pcdet/models/roi_heads/second_head.py
+pcdet/models/roi_heads/second_head_group.py
+pcdet/ops/iou3d_nms/src/iou3d_cpu.cpp
+pcdet/ops/iou3d_nms/src/iou3d_nms.cpp
+pcdet/ops/iou3d_nms/src/iou3d_nms_api.cpp
+pcdet/ops/iou3d_nms/src/iou3d_nms_kernel.cu
+pcdet/ops/pointnet2/pointnet2_stack/src/ball_query.cpp
+pcdet/ops/pointnet2/pointnet2_stack/src/ball_query_gpu.cu
+pcdet/ops/pointnet2/pointnet2_stack/src/group_points.cpp
+pcdet/ops/pointnet2/pointnet2_stack/src/group_points_gpu.cu
+pcdet/ops/pointnet2/pointnet2_stack/src/pointnet2_api.cpp
+pcdet/ops/pointnet2/pointnet2_stack/src/sampling.cpp
+pcdet/ops/pointnet2/pointnet2_stack/src/sampling_gpu.cu
+pcdet/ops/roiaware_pool3d/src/roiaware_pool3d.cpp
+pcdet/ops/roiaware_pool3d/src/roiaware_pool3d_kernel.cu
+pcdet/utils/__init__.py
+pcdet/utils/box_coder_utils.py
+pcdet/utils/box_utils.py
+pcdet/utils/cal_quality_utils.py
+pcdet/utils/calibration_kitti.py
+pcdet/utils/common_utils.py
+pcdet/utils/commu_utils.py
+pcdet/utils/loss_utils.py
+pcdet/utils/memory_ensemble_utils copy.py
+pcdet/utils/memory_ensemble_utils.py
+pcdet/utils/object3d_kitti.py
+pcdet/utils/self_training_utils copy.py
+pcdet/utils/self_training_utils.py
