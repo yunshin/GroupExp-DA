@@ -25,6 +25,8 @@ Please refer to [GETTING_STARTED.md](docs/GETTING_STARTED.md) to learn more usag
 
 ### Supported features and ToDo List
 
+- [ ] More instructions 
+ 
 - [ ] Update to Latest OpenPCDet version.
   
 - [ ] Support more adaptation tasks.
