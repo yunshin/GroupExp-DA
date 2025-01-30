@@ -1,7 +1,7 @@
 import numpy as np
 import torch.nn as nn
 import torch
-from .anchor_head_template_ours import AnchorHeadTemplate_Ours
+from .anchor_head_template_group_exp import AnchorHeadTemplate_Group_EXP
 import torch.nn.functional as F
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
@@ -77,7 +77,7 @@ class MultiLayerCrossAttention(nn.Module):
             mu = F.relu(self.query_update_proj(mu))
         return spatial_feature
     
-class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
+class AnchorHeadSingle_Group_EXP(AnchorHeadTemplate_Group_EXP):
     def __init__(self, model_cfg, input_channels, num_class, class_names, grid_size, point_cloud_range,
                  predict_boxes_when_training=True):
         super().__init__(
@@ -93,30 +93,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
         self.coff = 0.2
         
         
-        '''
-        self.conv_proj = nn.Conv2d(
-            input_channels, 512,
-            kernel_size=1
-        )
-        self.conv_cls = nn.Conv2d(
-            input_channels, self.num_anchors_per_location * self.num_class,
-            kernel_size=1
-        )
-        self.conv_box = nn.Conv2d(
-            input_channels, self.num_anchors_per_location * self.box_coder.code_size,
-            kernel_size=1
-        )
-        self.conv_dir_cls = nn.Conv2d(
-                input_channels,
-                self.num_anchors_per_location * self.model_cfg.NUM_DIR_BINS,
-                kernel_size=1
-            )
-        
-        self.models['cls0'] = self.conv_cls
-        self.models['box0'] = self.conv_box
-
-        self.models['dir0'] = self.conv_dir_cls
-        '''
+     
         self.models['cls0'] = nn.Conv2d(
                 input_channels, self.num_anchors_per_location * self.num_class,
                 kernel_size=1
@@ -133,15 +110,12 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
         )
         self.num_group = model_cfg['NUM_GROUP']
         
-        #self.mu = torch.nn.parameter.Parameter(torch.randn(self.num_group,1,512))
-        #self.mu = nn.Parameter(torch.zeros(self.num_group, 512))
-        #self.mu = nn.Parameter(torch.zeros(self.num_group, 512))
-        #self.cov = nn.Parameter(torch.zeros(self.num_group, 512))
-        #self.weight = nn.Parameter(torch.zeros(self.num_group))
+      
         self.register_buffer('mu', torch.zeros(self.num_group, 512))
         self.register_buffer('cov', torch.zeros(self.num_group, 512))
         self.register_buffer('weight', torch.zeros(self.num_group))
         self.group_init = False
+        
         if model_cfg.get('ONLY_OPTIM_GROUP', None):
             self.only_optim_group = model_cfg['ONLY_OPTIM_GROUP']
         else:
@@ -159,20 +133,6 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
 
         if self.training == False:
             self.only_optim_group = False
-
-        if model_cfg.get('FIX_GROUP', None):
-
-            self.group_fix = True
-        else:
-            self.group_fix = False
-
-        if model_cfg.get('MULTI_RPN', None):
-            self.multi_rpn = True
-        else:
-            self.multi_rpn = False
-
-       
-       
 
         self.group_models = nn.ModuleDict()
         
@@ -206,28 +166,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
                             nn.Dropout(0.1),
                             nn.Linear(512, output_dim)# Output layer
                         )
-        '''
-        self.shared_mlp = nn.Sequential(
-            nn.Conv1d(input_dim, 64, 1),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Conv1d(64, 128, 1),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Conv1d(128, 256, 1),
-            nn.BatchNorm1d(256),
-            nn.ReLU()
-        )
-
-        # Fully connected layers for final output
-        self.fc = nn.Sequential(
-            nn.Linear(256, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(256, output_dim)# Output layer
-        )
-        '''
+       
        
         self.init_weights()
         
@@ -238,37 +177,20 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
 
         for key in self.models:
             if 'cls' in key:
-                #nn.init.constant_(self.models[key].bias, -np.log((1 - pi) / pi))
+             
                 nn.init.xavier_uniform_(self.models[key].weight)
-                #nn.init.kaiming_uniform_(self.models[key].weight, nonlinearity='relu')
+                
                 nn.init.zeros_(self.models[key].bias)  # Initialize biases to zero
             elif 'box' in key:
-                #nn.init.normal_(self.models[key].weight, mean=0, std=0.001)
+               
                 nn.init.normal_(self.models[key].weight, mean=0.0, std=0.001)
                 nn.init.zeros_(self.models[key].bias)
         
-        if self.multi_rpn:
-            for key in self.group_models:
-                if 'cls' in key:
-                    #nn.init.constant_(self.models[key].bias, -np.log((1 - pi) / pi))
-                    nn.init.xavier_uniform_(self.group_models[key].weight)
-                    #nn.init.kaiming_uniform_(self.models[key].weight, nonlinearity='relu')
-                    nn.init.constant_(self.group_models[key].bias, -np.log((1 - pi) / pi))  # Initialize biases to zero
-                elif 'box' in key:
-                    #nn.init.normal_(self.models[key].weight, mean=0, std=0.001)
-                    nn.init.normal_(self.group_models[key].weight, mean=0.0, std=0.001)
-                    nn.init.zeros_(self.group_models[key].bias)
+      
         self.group_models['obj_mlp1'].apply(self.initialize_weights)
         self.group_models['obj_mlp2'].apply(self.initialize_weights)
         
-        '''
-        self.query_proj.apply(self.initialize_weights)
-        self.key_proj.apply(self.initialize_weights)
-        self.value_proj.apply(self.initialize_weights)
-        self.norm_layer.apply(self.initialize_weights)
-        '''
-        #nn.init.constant_(self.conv_cls.bias, -np.log((1 - pi) / pi))
-        #nn.init.normal_(self.conv_box.weight, mean=0, std=0.001)
+      
 
     def initialize_weights(self, module):
         if isinstance(module, nn.Linear):  # Apply to Linear layers
@@ -305,20 +227,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
         Returns:
             torch.Tensor: Scalar loss value.
         """
-        '''
-        N = embeddings.size(0)  # Number of embeddings
-        loss = 0.0
-        
-        similarity_matrix = torch.mm(embeddings, embeddings.T)  # Shape: (N, N)
-
-        #embeddings = F.normalize(embeddings, p=2, dim=1)
-        sims = []
-        for i in range(N):
-            for j in range(i + 1, N):  # Only compute for unique pairs (i, j)
-                sim = F.cosine_similarity(embeddings[i:i+1], embeddings[j:j+1])  # Cosine similarity
-                sims.append(sim.item())
-                loss += torch.clamp(margin - sim, min=0)  # Enforce dissimilarity
-        '''
+      
         
         embeddings = F.normalize(embeddings, p=2, dim=1)
         similarity_matrix = torch.mm(embeddings, embeddings.T)  # Cosine similarities
@@ -334,7 +243,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
             use_loss = False
         else:
             use_loss = True
-        #print('push away mat sim : {0} mean: {1} use_loss: {2}'.format(similarity_matrix, loss, use_loss))
+    
         return loss + reg_loss *0.1, use_loss  # Average over all pairs
     def pairwise_similarity_loss(self, embeddings):
         """
@@ -508,8 +417,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
         max_box_num = 0
         for batch_idx in range(batch_size):
 
-            #batch_mask = batch_num_list == batch_idx
-            #num_box_batch = batch_mask.sum().item()
+         
             
             batch_nums_selected = batch_num_list[indices]
             obj_nums_selected = obj_num_list[indices]
@@ -738,12 +646,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
             self.mu = (self.mu * (1-self.coff)) + (mu.detach() * self.coff) 
             self.cov = (self.cov * (1-self.coff)) + (cov.detach() * self.coff)
             self.weight = (self.weight * (1-self.coff)) + (weights.detach() * self.coff)
-            '''
-            self.mu = (self.mu * 0.8) + (mu.detach() * 0.2) 
-            self.cov = (self.cov * 0.8) + (cov.detach() * 0.2)
-            self.weight = (self.weight * 0.8) + (weights.detach() * 0.2)
-            '''
-
+          
     def determine_group(self, obj_descriptors):
     
         gmm = GaussianMixture(n_components=self.num_group, covariance_type='diag', reg_covar=1)
@@ -755,7 +658,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
 
         # Reinitialize the GMM with updated parameters as initialization
         gmm.means_init = new_means_init
-        #gmm.weights_init = new_weights_init# / (new_weights_init.sum() + 1e-6)
+     
         
         gmm.precisions_init = 1 / (new_covariances_init + 1e-6)
         try:
@@ -769,8 +672,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
             labels = labels.cpu().numpy()
             probs = np.zeros((obj_descriptors.shape[0], self.num_group))
             probs[:, labels] = 1
-            #labels = self.gmm.predict(obj_descriptors)
-            #probs = self.gmm.predict_proba(obj_descriptors)
+          
         
        
         
@@ -811,11 +713,7 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
                     min_idx = torch.argmin(dist_cluster)
                     obj_num = source_nums[min_idx].cpu().numpy()
                     labels[obj_num] = cluster
-                '''
-                source_cluster = non_empty_clusters[0]
-                sample_idx = np.where(labels == source_cluster)[0][0]
-                labels[sample_idx] = cluster
-                '''
+            
         return labels
 
     def get_group(self, obj_descriptors, assigned_groups=None):
@@ -857,23 +755,9 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
 
             print('\n\n Group Initialized! \n\n')
         else:
-            if self.group_fix == False:
-                label, probs = self.determine_group(obj_descriptors.detach().cpu().numpy())
-            else:
-                
-                label = []
-                for idx_group in range(len(assigned_groups)):
-                
-                    assigned_group_ = assigned_groups[idx_group]
-                    valid_mask = assigned_group_ > -1
-                    assigned_group_ = assigned_group_[valid_mask]
-                    label_ = assigned_group_.long()
-                    label.append(label_)
-                
-                label = torch.cat(label)
-                if len(label) != len(obj_descriptors):
-                    pdb.set_trace()
-                    print('group and obj num mismatch')
+            
+            label, probs = self.determine_group(obj_descriptors.detach().cpu().numpy())
+            
 
             for idx_group in range(self.num_group):
                 
@@ -889,7 +773,6 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
                     mus = torch.cat([mus, mu[None,:]],0)
 
             mu_for_optim = (self.mu.clone()* (1-self.coff)) + (mus * self.coff) 
-            #if self.st == False or self.is_target:
             self.update_GMM(obj_descriptors.detach(), label, init=False)
 
         if torch.isnan(mu_for_optim).any():
@@ -945,20 +828,12 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
       
         if is_group:
             
-            spatial_features_2d = self.group_models['attn'](mus, spatial_features_2d)
-            #spatial_features_2d = self.apply_attn(mus, spatial_features_2d)
-            
+            spatial_features_2d = self.group_models['attn'](mus, spatial_features_2d)  
             data_dict['spatial_features_2d{0}'.format(idx)] = spatial_features_2d
 
-            if self.multi_rpn:
-                pdb.set_trace()
-                cls_preds = self.group_models['cls'](spatial_features_2d)
-                box_preds = self.group_models['box'](spatial_features_2d)
-                #cls_preds = self.models['cls0'](spatial_features_2d)
-                #box_preds = self.models['box0'](spatial_features_2d)
-            else:
-                cls_preds = self.models['cls0'](spatial_features_2d)
-                box_preds = self.models['box0'](spatial_features_2d)
+           
+            cls_preds = self.models['cls0'](spatial_features_2d)
+            box_preds = self.models['box0'](spatial_features_2d)
         else:
             cls_preds = self.models['cls0'](spatial_features_2d)
             box_preds = self.models['box0'](spatial_features_2d)
@@ -968,22 +843,14 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
 
         if is_group: #group
 
-            if self.multi_rpn:
-                self.forward_ret_dict['cls_preds{0}'.format(idx)] = cls_preds
-                self.forward_ret_dict['box_preds{0}'.format(idx)] = box_preds
-                pdb.set_trace()
-                dir_cls_preds = self.group_models['dir'](spatial_features_2d)
-                #dir_cls_preds = self.models['dir0'](spatial_features_2d)
-                dir_cls_preds = dir_cls_preds.permute(0, 2, 3, 1).contiguous()
-                self.forward_ret_dict['dir_cls_preds{0}'.format(idx)] = dir_cls_preds
-            else:
+            
 
-                self.forward_ret_dict['cls_preds{0}'.format(idx)] = cls_preds
-                self.forward_ret_dict['box_preds{0}'.format(idx)] = box_preds
+            self.forward_ret_dict['cls_preds{0}'.format(idx)] = cls_preds
+            self.forward_ret_dict['box_preds{0}'.format(idx)] = box_preds
 
-                dir_cls_preds = self.models['dir0'](spatial_features_2d)
-                dir_cls_preds = dir_cls_preds.permute(0, 2, 3, 1).contiguous()
-                self.forward_ret_dict['dir_cls_preds{0}'.format(idx)] = dir_cls_preds
+            dir_cls_preds = self.models['dir0'](spatial_features_2d)
+            dir_cls_preds = dir_cls_preds.permute(0, 2, 3, 1).contiguous()
+            self.forward_ret_dict['dir_cls_preds{0}'.format(idx)] = dir_cls_preds
         else:
             self.forward_ret_dict['cls_preds'] = cls_preds
             self.forward_ret_dict['box_preds'] = box_preds
@@ -1043,49 +910,17 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
                 data_dict['batch_box_preds'] = batch_box_preds
                 data_dict['cls_preds_normalized'] = False
         
-                #self.tmp_cls = torch.clone(batch_cls_preds.detach())
-                #self.tmp_box = torch.clone(batch_box_preds.detach())
-                '''
-                gt_boxes_group = data_dict['gt_boxes']
-                self.max_ori = []
-                self.scores_ori = []
-                for idx_test in range(len(gt_boxes_group)):
-                        gt_boxes_group_ = gt_boxes_group[idx_test]
-                        gt_boxes_group_ = gt_boxes_group_[gt_boxes_group_[:,3]>0]
-
-                        if len(gt_boxes_group_) > 0:
-                            
-                            cls_scores_ = torch.clone(batch_cls_preds[idx_test])
-                            ious_boxes_ = boxes_iou3d_gpu(gt_boxes_group_[:,:7], torch.clone(batch_box_preds[idx_test]))
-                            ious_max, max_indices = torch.max(ious_boxes_,1)
-                            corr_scores = cls_scores_[max_indices]
-                            
-                            self.max_ori.append(ious_max)
-                            self.scores_ori.append(corr_scores)
-                            print('Sample {0} Group: {1}  max ious: {2} corr scores: {3}'.format(idx_test, idx, ious_max.detach().cpu().numpy(), corr_scores.detach().cpu().numpy()))
-                '''        
+           
                 
                 
 
         return data_dict
     
-    def sub_sample(self, obj_points, obj_points_masks, gt_boxes, max_obj_num=30):
-
-        with torch.no_grad():
-            sample_indices, batch_num_list, obj_num_list = self.get_obj_descriptor_subsample(obj_points, obj_points_masks, gt_boxes, max_obj_num)
-            #batch_num_list : batch index of all boxes
-            #obj_num_list: index of boxes in each batch
-
-            new_boxes, new_obj_points, new_obj_points_masks = self.make_form_from_indices(obj_points, obj_points_masks, gt_boxes, 
-            sample_indices, batch_num_list, obj_num_list)
-        
-        return new_boxes, new_obj_points, new_obj_points_masks
-
 
     def forward(self, data_dict):
         
         
-        #cases to consider: #1 pseudo label collection #2 source training #3 st training #4 testing
+      
         if 'pseudo_collection' in data_dict:
             
             if data_dict['cur_epoch'] <= self.group_epoch:
@@ -1120,42 +955,29 @@ class AnchorHeadSingle_Ours_EXP_0_8RPN(AnchorHeadTemplate_Ours):
         
         if self.training:
             num_sample = data_dict['gt_boxes'].shape[1]
-            #if num_sample > 35:
-            if False and num_sample > 100 and self.group_fix == False:
-                torch.cuda.empty_cache()
-                print('subsampled.. boxes: {0} points: {1}'.format(data_dict['gt_boxes'].shape, data_dict['obj_points'].shape))
-                new_boxes, new_obj_points, new_obj_points_masks = self.sub_sample(data_dict['obj_points'], data_dict['obj_points_masks'],
-                data_dict['gt_boxes'], max_obj_num=20)
-              
-                data_dict['obj_points'] = new_obj_points
-                data_dict['obj_points_masks'] = new_obj_points_masks
-                data_dict['gt_boxes'] = new_boxes
+          
+           
                 
                 
         
         if self.only_optim_ori == False and self.training and len(data_dict['gt_boxes']) > 0:
 
-            if self.group_fix:
-                obj_descriptors, batch_nums, gt_boxes, valid_obj_mask, assigned_groups = self.get_obj_descriptor(data_dict['obj_points'], data_dict['obj_points_masks'], data_dict['gt_boxes'], data_dict['assigned_groups'])
-                data_dict['gt_boxes'] = gt_boxes
-                mus, group_label = self.get_group(obj_descriptors, assigned_groups)
-            else:
+           
                 
-                
-                obj_descriptors, batch_nums, gt_boxes, valid_obj_mask = self.get_obj_descriptor(data_dict['obj_points'], data_dict['obj_points_masks'], data_dict['gt_boxes'])
-                
-                data_dict['gt_boxes'] = gt_boxes
-                mus, group_label = self.get_group(obj_descriptors)
+            obj_descriptors, batch_nums, gt_boxes, valid_obj_mask = self.get_obj_descriptor(data_dict['obj_points'], data_dict['obj_points_masks'], data_dict['gt_boxes'])
+            
+            data_dict['gt_boxes'] = gt_boxes
+            mus, group_label = self.get_group(obj_descriptors)
             
 
-            if self.group_fix == False:
-                ctrast_loss, use_loss = self.pairwise_dissimilarity_loss(mus)
-                if use_loss:
-                    self.forward_ret_dict['ctrast_loss'] = ctrast_loss
-                else:
-                    self.forward_ret_dict['ctrast_loss'] = torch.zeros(1).float().cuda()[0]
-                pos_loss = self.get_parwise_loss(obj_descriptors, group_label)
-                self.forward_ret_dict['pos_loss'] = pos_loss
+         
+            ctrast_loss, use_loss = self.pairwise_dissimilarity_loss(mus)
+            if use_loss:
+                self.forward_ret_dict['ctrast_loss'] = ctrast_loss
+            else:
+                self.forward_ret_dict['ctrast_loss'] = torch.zeros(1).float().cuda()[0]
+            pos_loss = self.get_parwise_loss(obj_descriptors, group_label)
+            self.forward_ret_dict['pos_loss'] = pos_loss
             
             del data_dict['obj_points']
             del data_dict['obj_points_masks']

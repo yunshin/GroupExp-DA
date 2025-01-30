@@ -8,7 +8,7 @@ from .target_assigner.atss_target_assigner import ATSSTargetAssigner
 from .target_assigner.axis_aligned_target_assigner import AxisAlignedTargetAssigner
 import pdb
 
-class AnchorHeadTemplate_Ours(nn.Module):
+class AnchorHeadTemplate_Group_EXP(nn.Module):
     def __init__(self, model_cfg, num_class, class_names, grid_size, point_cloud_range, predict_boxes_when_training):
         super().__init__()
         self.model_cfg = model_cfg
