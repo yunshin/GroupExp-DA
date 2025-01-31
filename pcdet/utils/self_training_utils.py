@@ -224,7 +224,7 @@ def save_pseudo_label_batch(input_dict,
                 ignore_mask = pred_scores < labels_ignore_scores
 
                 if (ignore_mask[group_mask]==False).sum() > 0: #removing detections from the lowest scores
-                    print('added from groups: {0}'.format((ignore_mask[group_mask]==False).sum()))
+                    
                     num_samples_from_groups = (ignore_mask[group_mask]==False).sum()
                     group_indicator_mask = group_indicator > 0
                  
